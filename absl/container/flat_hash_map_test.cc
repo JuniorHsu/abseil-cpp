@@ -75,6 +75,23 @@ using UniquePtrMapTypes = ::testing::Types<Map<int, std::unique_ptr<int>>>;
 
 INSTANTIATE_TYPED_TEST_SUITE_P(FlatHashMap, UniquePtrModifiersTest,
                                UniquePtrMapTypes);
+#define CONSTRUCT_ON_FIRST_USE(type, ...)                                                          \
+  do {                                                                                             \
+    static const type* objectptr = new type{__VA_ARGS__};                                          \
+    return *objectptr;                                                                             \
+  } while (0)
+
+using StringViewMap = flat_hash_map<absl::string_view, absl::string_view>;
+const StringViewMap& replacements() {
+  CONSTRUCT_ON_FIRST_USE(StringViewMap, {{"xxxxxxxxx", ""}, {".", "_"}});
+}
+
+TEST(FlatHashMap, EmptyStringViewMap) {
+  const StringViewMap& r = replacements();
+  EXPECT_EQ(r.size(), 2);
+  EXPECT_EQ(r.at("xxxxxxxxx"), "");
+  EXPECT_EQ(r.at("."), "_");
+}
 
 TEST(FlatHashMap, StandardLayout) {
   struct Int {
